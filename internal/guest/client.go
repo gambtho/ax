@@ -48,7 +48,12 @@ func DialTarget(target string, targetActor string) (*Client, error) {
 
 	dialOpts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	if targetActor != "" {
+		atespace, actor, ok := strings.Cut(targetActor, "/")
+		if !ok || atespace == "" || actor == "" || strings.Contains(actor, "/") {
+			return nil, fmt.Errorf("invalid target actor %q (want atespace/actor)", targetActor)
+		}
 		dialOpts = append(dialOpts,
+			grpc.WithAuthority(fmt.Sprintf("%s.%s.actors.resources.substrate.ate.dev", actor, atespace)),
 			grpc.WithChainUnaryInterceptor(func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 				ctx = metadata.AppendToOutgoingContext(ctx, "ate-target-actor", targetActor)
 				return invoker(ctx, method, req, reply, cc, opts...)

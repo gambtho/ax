@@ -1,6 +1,6 @@
 # Networking
 
-Tasks do not get a Kubernetes Service or Ingress of their own. Every request to a task goes through Agent Substrate's **atenet router**, the `atenet-router` Service in the `ate-system` namespace. The router requires the actor's stable DNS authority and accepts `ate-target-actor` as the explicit target identifier; it resumes the actor first if it was suspended, then proxies the request there.
+Tasks do not get a Kubernetes Service or Ingress of their own. Every request to a task goes through Agent Substrate's **atenet router**, the `atenet-router` Service in the `ate-system` namespace. The router requires the actor's stable DNS authority (`Host` for HTTP or `:authority` for gRPC) and accepts `ate-target-actor` as the explicit target identifier; it resumes the actor first if it was suspended, then proxies the request there.
 
 The actor authority is `<task>.<atespace>.actors.resources.substrate.ate.dev`, and the target header is `<atespace>/<task>`. The controller always names a task's actor after the task, so both values below identify the task `task123` in the `default` atespace.
 
@@ -26,9 +26,14 @@ curl -H "Host: task123.default.actors.resources.substrate.ate.dev" \
 
 ## gRPC request routing
 
-Send the header as outgoing metadata under the lowercase key. This is what `ax ssh` does to reach the guest services.
+Set the actor DNS name as the gRPC authority and send the target header as outgoing metadata. This is what `ax ssh` does to reach the guest services, including through a localhost port-forward.
 
 ```go
+conn, err := grpc.NewClient(
+    routerAddress,
+    grpc.WithAuthority("task123.default.actors.resources.substrate.ate.dev"),
+    // Add transport credentials and the metadata interceptors used by the client.
+)
 ctx = metadata.AppendToOutgoingContext(ctx, "ate-target-actor", "default/task123")
 resp, err := client.SomeMethod(ctx, req)
 ```
