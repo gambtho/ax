@@ -21,13 +21,20 @@
 #   4. Suspend the task, checkpointing its workspace.
 #
 # Environment:
-#   AX_BIN    path to the ax CLI            (default: ./bin/ax)
-#   ATESPACE  atespace to run the demo in   (default: default)
-#   NO_COLOR  set to disable colored output
+#   AX_BIN             path to the ax CLI            (default: ./bin/ax)
+#   ATESPACE           atespace to run the demo in   (default: default)
+#   TASK_RUNNER_IMAGE  pullable ax-task-runner image (required)
+#   NO_COLOR           set to disable colored output
 
 set -euo pipefail
 
 AX_BIN="${AX_BIN:-./bin/ax}"
+TASK_RUNNER_IMAGE="${TASK_RUNNER_IMAGE:-}"
+if [[ -z "${TASK_RUNNER_IMAGE}" ]]; then
+  printf 'error: TASK_RUNNER_IMAGE must name an ax-task-runner image the Substrate workers can pull\n' >&2
+  printf 'build one with: make build-task-runner TASK_RUNNER_REPO=<registry>/ax-task-runner; then push it with your registry tooling\n' >&2
+  exit 2
+fi
 
 # ax runs the CLI at AX_BIN so the commands below read the way you would type them.
 ax() { "${AX_BIN}" "$@"; }
@@ -134,7 +141,7 @@ metadata:
   atespace: ${ATESPACE}
 spec:
   debug: true   # serve guest services so we can ax ssh in
-  image: "gcr.io/ax-substrate/ate-images/ax-task-runner@sha256:3a0dea6ad8b55278685db58aca6e37dc4ba04056831d45bef3aaeafdca43cac6"
+  image: "${TASK_RUNNER_IMAGE}"
   workspaces:
     - name: ${WORKSPACE_NAME}
       path: "/workspace"

@@ -91,7 +91,17 @@ ax suspend task task123              # checkpoint and pause
 ax resume task task123               # pick up where it left off
 ```
 
-Want to see the whole lifecycle end to end? Run [`./demo.sh`](demo.sh). It applies a custom workspace, waits for readiness, runs commands over `ax ssh`, and suspends the task.
+Want to see the whole lifecycle end to end? Build and push the task runner to a registry your Substrate workers can pull from, then pass the image to [`./demo.sh`](demo.sh):
+
+```bash
+RUNNER_REPO=registry.example.com/my-project/ax-task-runner
+CONTAINER_CLI=$(command -v podman || command -v docker)
+make build-task-runner TASK_RUNNER_REPO="$RUNNER_REPO" CONTAINER_CLI="$CONTAINER_CLI"
+"$CONTAINER_CLI" push "$RUNNER_REPO:latest"
+TASK_RUNNER_IMAGE="$RUNNER_REPO:latest" ./demo.sh
+```
+
+The demo applies a custom workspace, waits for readiness, runs commands over `ax ssh`, and suspends the task.
 
 ## Documentation
 
